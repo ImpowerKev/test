@@ -26,3 +26,9 @@ This repository contains a minimal Streamlit app for exploring DevOps in Streaml
 ## Deploying to Streamlit Cloud
 
 Push this repository to GitHub and connect it to [Streamlit Cloud](https://streamlit.io/cloud). Streamlit Cloud will automatically install the dependencies listed in `requirements.txt` and run `app.py`.
+
+## Notes
+
+The Azure DevOps API only allows up to 200 work item IDs per request. The
+`kevops_explore.get_work_items` function retrieves results in batches so large
+queries work without hitting the `VS402337` error.

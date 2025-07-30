@@ -60,11 +60,20 @@ def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
     """Retrieve work item details for a list of IDs."""
     if not ids:
         return []
-    id_str = ",".join(map(str, ids))
+
     base = _clean_org_url(org_url)
-    url = f"{base}/_apis/wit/workitems?ids={id_str}&api-version=7.0"
-    data = api_request("GET", url, pat)
-    return data.get("value", [])
+    items: list[dict] = []
+
+    # The work items API only accepts up to 200 IDs per request. Split the
+    # list into chunks to avoid HTTP 400 errors (VS402337).
+    chunk_size = 200
+    for start in range(0, len(ids), chunk_size):
+        id_chunk = ",".join(map(str, ids[start : start + chunk_size]))
+        url = f"{base}/_apis/wit/workitems?ids={id_chunk}&api-version=7.0"
+        data = api_request("GET", url, pat)
+        items.extend(data.get("value", []))
+
+    return items
 
 
 def get_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
