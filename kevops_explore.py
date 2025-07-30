@@ -47,34 +47,38 @@ def api_request(method: str, url: str, pat: str, data: bytes | None = None) -> d
         return {}
 
 
-def wiql_query(org_url: str, project: str, pat: str, query: str) -> dict:
+def wiql_query(
+    org_url: str,
+    project: str,
+    pat: str,
+    query: str,
+    top: int | None = None,
+) -> dict:
     """Execute a WIQL query and return the results."""
     base = _clean_org_url(org_url)
     proj = parse.quote(project, safe="")
     url = f"{base}/{proj}/_apis/wit/wiql?api-version=7.0"
+    if top:
+        url += f"&$top={top}"
     payload = json.dumps({"query": query}).encode()
     return api_request("POST", url, pat, data=payload)
 
 
-MAX_WIQL_BATCH = 20_000  # Azure DevOps WIQL limit
-MAX_WI_BATCH = 200       # Azure DevOps work item retrieval limit
+WIQL_BATCH = 20_000  # service-side ceiling for WIQL
+MAX_WI_BATCH = 200   # Azure DevOps work item retrieval limit
 
 
-def _paged_wiql(
-    org_url: str, project: str, pat: str, base_query: str, batch: int = MAX_WIQL_BATCH
-) -> list[int]:
-    """Return work-item IDs in batches of ≤batch."""
-    last_id = 0
-    all_ids: list[int] = []
+def _paged_wiql(org_url: str, project: str, pat: str, base_query: str) -> list[int]:
+    """Return **all** matching work-item IDs, 20_000 at a time."""
+    last_id, all_ids = 0, []
     while True:
         wiql = (
-            f"SELECT TOP {batch} [System.Id] "
-            "FROM WorkItems "
+            "SELECT [System.Id] FROM WorkItems "
             f"WHERE {base_query} AND [System.Id] > {last_id} "
             "ORDER BY [System.Id]"
         )
-        result = wiql_query(org_url, project, pat, wiql)
-        ids = [w["id"] for w in result.get("workItems", [])]
+        result = wiql_query(org_url, project, pat, wiql, top=WIQL_BATCH)
+        ids = [w['id'] for w in result.get('workItems', [])]
         if not ids:
             break
         all_ids.extend(ids)
@@ -83,7 +87,7 @@ def _paged_wiql(
 
 
 def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
-    """Retrieve work item details for a list of IDs."""
+    """Retrieve work items in 200-ID chunks."""
     if not ids:
         return []
 
