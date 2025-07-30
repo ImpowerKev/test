@@ -78,27 +78,45 @@ def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
 
 def get_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
     """Return all open tasks in the given project."""
-    query = (
-        "SELECT [System.Id] FROM WorkItems "
-        "WHERE [System.WorkItemType] = 'Task' "
-        "AND [System.State] <> 'Closed'"
-    )
-    result = wiql_query(org_url, project, pat, query)
-    ids = [item["id"] for item in result.get("workItems", [])]
+    ids = _query_task_ids(org_url, project, pat)
     return get_work_items(org_url, ids, pat)
 
 
 def get_my_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
     """Return open tasks assigned to the user associated with the PAT."""
-    query = (
-        "SELECT [System.Id] FROM WorkItems "
-        "WHERE [System.WorkItemType] = 'Task' "
-        "AND [System.State] <> 'Closed' "
-        "AND [System.AssignedTo] = @Me"
-    )
-    result = wiql_query(org_url, project, pat, query)
-    ids = [item["id"] for item in result.get("workItems", [])]
+    ids = _query_task_ids(org_url, project, pat, mine=True)
     return get_work_items(org_url, ids, pat)
+
+
+def _query_task_ids(org_url: str, project: str, pat: str, mine: bool = False) -> list[int]:
+    """Retrieve open task IDs, paging to avoid the 20k WIQL limit."""
+    base_conditions = [
+        "[System.WorkItemType] = 'Task'",
+        "[System.State] <> 'Closed'",
+    ]
+    if mine:
+        base_conditions.append("[System.AssignedTo] = @Me")
+
+    where_clause = " AND ".join(base_conditions)
+    all_ids: list[int] = []
+    last_id = 0
+
+    while True:
+        query = (
+            "SELECT TOP 20000 [System.Id] FROM WorkItems "
+            f"WHERE {where_clause} AND [System.Id] > {last_id} "
+            "ORDER BY [System.Id]"
+        )
+        result = wiql_query(org_url, project, pat, query)
+        batch_ids = [item["id"] for item in result.get("workItems", [])]
+        if not batch_ids:
+            break
+        all_ids.extend(batch_ids)
+        last_id = batch_ids[-1]
+        if len(batch_ids) < 20000:
+            break
+
+    return all_ids
 
 
 def main() -> None:
