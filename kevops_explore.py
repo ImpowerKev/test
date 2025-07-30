@@ -125,6 +125,11 @@ def main() -> None:
     parser.add_argument("project", nargs="?", help="Azure DevOps project name")
     parser.add_argument("pat", nargs="?", help="Personal access token")
     parser.add_argument("--mine", action="store_true", help="Fetch tasks assigned to the PAT user")
+    parser.add_argument(
+        "--count",
+        action="store_true",
+        help="Only print the number of tasks instead of the JSON output",
+    )
 
     # Ignore unknown args so Streamlit can run this script
     args, _ = parser.parse_known_args()
@@ -149,7 +154,10 @@ def main() -> None:
     else:
         tasks = get_open_tasks(org_url, project, pat)
 
-    print(json.dumps(tasks, indent=2))
+    if args.count:
+        print(f"{len(tasks)} tasks")
+    else:
+        print(json.dumps(tasks, indent=2))
 
 
 if __name__ == "__main__":

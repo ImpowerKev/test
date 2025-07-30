@@ -23,6 +23,17 @@ This repository contains a minimal Streamlit app for exploring DevOps in Streaml
    streamlit run app.py
    ```
 
+## CLI Usage
+
+You can also use `kevops_explore.py` as a command line tool:
+
+```bash
+python kevops_explore.py <organization_url> <project> <pat> [--mine] [--count]
+```
+
+* `--mine` fetches tasks assigned to the PAT user.
+* `--count` prints only the number of tasks instead of the full JSON output.
+
 ## Deploying to Streamlit Cloud
 
 Push this repository to GitHub and connect it to [Streamlit Cloud](https://streamlit.io/cloud). Streamlit Cloud will automatically install the dependencies listed in `requirements.txt` and run `app.py`.

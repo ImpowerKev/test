@@ -20,6 +20,7 @@ else:
         tasks = kevops_explore.get_open_tasks(org_url, project, pat)
 
     if tasks:
+        st.write(f"Found {len(tasks)} tasks.")
         st.json(tasks)
     else:
         st.write("No open tasks found.")
