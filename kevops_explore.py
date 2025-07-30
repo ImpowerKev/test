@@ -78,7 +78,7 @@ def _paged_wiql(
         if not ids:
             break
         all_ids.extend(ids)
-    last_id = ids[-1]
+        last_id = ids[-1]
     return all_ids
 
 
