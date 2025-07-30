@@ -103,7 +103,7 @@ def _query_task_ids(org_url: str, project: str, pat: str, mine: bool = False) ->
 
     while True:
         query = (
-            "SELECT TOP 20000 [System.Id] FROM WorkItems "
+            "SELECT [System.Id] FROM WorkItems "
             f"WHERE {where_clause} AND [System.Id] > {last_id} "
             "ORDER BY [System.Id]"
         )
