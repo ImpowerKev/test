@@ -56,6 +56,32 @@ def wiql_query(org_url: str, project: str, pat: str, query: str) -> dict:
     return api_request("POST", url, pat, data=payload)
 
 
+MAX_WIQL_BATCH = 20_000  # Azure DevOps WIQL limit
+MAX_WI_BATCH = 200       # Azure DevOps work item retrieval limit
+
+
+def _paged_wiql(
+    org_url: str, project: str, pat: str, base_query: str, batch: int = MAX_WIQL_BATCH
+) -> list[int]:
+    """Return work-item IDs in batches of ≤batch."""
+    last_id = 0
+    all_ids: list[int] = []
+    while True:
+        wiql = (
+            f"SELECT TOP {batch} [System.Id] "
+            "FROM WorkItems "
+            f"WHERE {base_query} AND [System.Id] > {last_id} "
+            "ORDER BY [System.Id]"
+        )
+        result = wiql_query(org_url, project, pat, wiql)
+        ids = [w["id"] for w in result.get("workItems", [])]
+        if not ids:
+            break
+        all_ids.extend(ids)
+    last_id = ids[-1]
+    return all_ids
+
+
 def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
     """Retrieve work item details for a list of IDs."""
     if not ids:
@@ -66,9 +92,8 @@ def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
 
     # The work items API only accepts up to 200 IDs per request. Split the
     # list into chunks to avoid HTTP 400 errors (VS402337).
-    chunk_size = 200
-    for start in range(0, len(ids), chunk_size):
-        id_chunk = ",".join(map(str, ids[start : start + chunk_size]))
+    for start in range(0, len(ids), MAX_WI_BATCH):
+        id_chunk = ",".join(map(str, ids[start : start + MAX_WI_BATCH]))
         url = f"{base}/_apis/wit/workitems?ids={id_chunk}&api-version=7.0"
         data = api_request("GET", url, pat)
         items.extend(data.get("value", []))
@@ -78,45 +103,31 @@ def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
 
 def get_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
     """Return all open tasks in the given project."""
-    ids = _query_task_ids(org_url, project, pat)
+    base_predicate = (
+        "[System.WorkItemType] = 'Task' AND "
+        "[System.State] <> 'Closed'"
+    )
+    ids = _paged_wiql(org_url, project, pat, base_predicate)
     return get_work_items(org_url, ids, pat)
 
 
 def get_my_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
     """Return open tasks assigned to the user associated with the PAT."""
-    ids = _query_task_ids(org_url, project, pat, mine=True)
+    base_predicate = (
+        "[System.WorkItemType] = 'Task' AND "
+        "[System.State] <> 'Closed' AND "
+        "[System.AssignedTo] = @Me"
+    )
+    ids = _paged_wiql(org_url, project, pat, base_predicate)
     return get_work_items(org_url, ids, pat)
 
 
 def _query_task_ids(org_url: str, project: str, pat: str, mine: bool = False) -> list[int]:
-    """Retrieve open task IDs, paging to avoid the 20k WIQL limit."""
-    base_conditions = [
-        "[System.WorkItemType] = 'Task'",
-        "[System.State] <> 'Closed'",
-    ]
+    """Backward compatible helper to fetch task IDs."""
+    base_predicate = "[System.WorkItemType] = 'Task' AND [System.State] <> 'Closed'"
     if mine:
-        base_conditions.append("[System.AssignedTo] = @Me")
-
-    where_clause = " AND ".join(base_conditions)
-    all_ids: list[int] = []
-    last_id = 0
-
-    while True:
-        query = (
-            "SELECT [System.Id] FROM WorkItems "
-            f"WHERE {where_clause} AND [System.Id] > {last_id} "
-            "ORDER BY [System.Id]"
-        )
-        result = wiql_query(org_url, project, pat, query)
-        batch_ids = [item["id"] for item in result.get("workItems", [])]
-        if not batch_ids:
-            break
-        all_ids.extend(batch_ids)
-        last_id = batch_ids[-1]
-        if len(batch_ids) < 20000:
-            break
-
-    return all_ids
+        base_predicate += " AND [System.AssignedTo] = @Me"
+    return _paged_wiql(org_url, project, pat, base_predicate)
 
 
 def main() -> None:
