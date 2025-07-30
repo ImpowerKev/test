@@ -27,9 +27,24 @@ def api_request(method: str, url: str, pat: str, data: bytes | None = None) -> d
         with request.urlopen(req) as resp:
             return json.loads(resp.read().decode())
     except error.HTTPError as e:
-        sys.stderr.write(f"HTTP error {e.code}: {e.reason}\n")
-        sys.stderr.write(e.read().decode() + "\n")
-        raise
+        msg = f"HTTP error {e.code}: {e.reason}"
+        body = e.read().decode()
+        if st is not None:
+            st.error(msg)
+            if body:
+                st.code(body)
+        else:
+            sys.stderr.write(msg + "\n")
+            if body:
+                sys.stderr.write(body + "\n")
+        return {}
+    except error.URLError as e:
+        msg = f"Connection error: {e.reason}"
+        if st is not None:
+            st.error(msg)
+        else:
+            sys.stderr.write(msg + "\n")
+        return {}
 
 
 def wiql_query(org_url: str, project: str, pat: str, query: str) -> dict:
