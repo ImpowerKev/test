@@ -5,6 +5,11 @@ import argparse
 from base64 import b64encode
 from urllib import request, parse, error
 
+
+def _clean_org_url(url: str) -> str:
+    """Return the organization URL without a trailing slash."""
+    return url.rstrip("/")
+
 try:
     import streamlit as st  # type: ignore
 except Exception:  # pragma: no cover - Streamlit may not be installed for CLI use
@@ -29,7 +34,9 @@ def api_request(method: str, url: str, pat: str, data: bytes | None = None) -> d
 
 def wiql_query(org_url: str, project: str, pat: str, query: str) -> dict:
     """Execute a WIQL query and return the results."""
-    url = f"{org_url}/{project}/_apis/wit/wiql?api-version=7.0"
+    base = _clean_org_url(org_url)
+    proj = parse.quote(project, safe="")
+    url = f"{base}/{proj}/_apis/wit/wiql?api-version=7.0"
     payload = json.dumps({"query": query}).encode()
     return api_request("POST", url, pat, data=payload)
 
@@ -39,7 +46,8 @@ def get_work_items(org_url: str, ids: list[int], pat: str) -> list[dict]:
     if not ids:
         return []
     id_str = ",".join(map(str, ids))
-    url = f"{org_url}/_apis/wit/workitems?ids={id_str}&api-version=7.0"
+    base = _clean_org_url(org_url)
+    url = f"{base}/_apis/wit/workitems?ids={id_str}&api-version=7.0"
     data = api_request("GET", url, pat)
     return data.get("value", [])
 
