@@ -1,0 +1,18 @@
+# Sample Streamlit App
+
+This repository contains a minimal Streamlit app for exploring DevOps in Streamlit Cloud.
+
+## Running locally
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Launch the app:
+   ```bash
+   streamlit run app.py
+   ```
+
+## Deploying to Streamlit Cloud
+
+Push this repository to GitHub and connect it to [Streamlit Cloud](https://streamlit.io/cloud). Streamlit Cloud will automatically install the dependencies listed in `requirements.txt` and run `app.py`.
