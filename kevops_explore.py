@@ -5,6 +5,11 @@ import argparse
 from base64 import b64encode
 from urllib import request, parse, error
 
+try:
+    import streamlit as st  # type: ignore
+except Exception:  # pragma: no cover - Streamlit may not be installed for CLI use
+    st = None
+
 
 def api_request(method: str, url: str, pat: str, data: bytes | None = None) -> dict:
     """Make an authenticated request to the Azure DevOps REST API."""
@@ -66,17 +71,33 @@ def get_my_open_tasks(org_url: str, project: str, pat: str) -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="KevOps exploratory CLI")
-    parser.add_argument("organization_url", help="Base organization URL, e.g. https://cgna-stg.visualstudio.com")
-    parser.add_argument("project", help="Azure DevOps project name")
-    parser.add_argument("pat", help="Personal access token")
+    parser.add_argument("organization_url", nargs="?", help="Base organization URL, e.g. https://cgna-stg.visualstudio.com")
+    parser.add_argument("project", nargs="?", help="Azure DevOps project name")
+    parser.add_argument("pat", nargs="?", help="Personal access token")
     parser.add_argument("--mine", action="store_true", help="Fetch tasks assigned to the PAT user")
 
-    args = parser.parse_args()
+    # Ignore unknown args so Streamlit can run this script
+    args, _ = parser.parse_known_args()
+
+    # Attempt to fill missing values from environment variables or st.secrets
+    org_url = args.organization_url or os.getenv("AZURE_DEVOPS_ORG_URL")
+    project = args.project or os.getenv("AZURE_DEVOPS_PROJECT")
+    pat = args.pat or os.getenv("AZURE_DEVOPS_PAT")
+    if st is not None:
+        secrets = getattr(st, "secrets", {})
+        org_url = org_url or secrets.get("organization_url")
+        project = project or secrets.get("project")
+        pat = pat or secrets.get("pat")
+
+    if not org_url or not project or not pat:
+        parser.error(
+            "organization_url, project, and pat must be provided via arguments, environment variables, or st.secrets"
+        )
 
     if args.mine:
-        tasks = get_my_open_tasks(args.organization_url, args.project, args.pat)
+        tasks = get_my_open_tasks(org_url, project, pat)
     else:
-        tasks = get_open_tasks(args.organization_url, args.project, args.pat)
+        tasks = get_open_tasks(org_url, project, pat)
 
     print(json.dumps(tasks, indent=2))
 
