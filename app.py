@@ -3,7 +3,7 @@ import os
 
 import kevops_explore
 
-st.title("KevOps Explorer")
+st.title("Open Epic Count")
 
 try:
     org_url = st.secrets.get("organization_url")
@@ -23,25 +23,5 @@ if not all([org_url, project, pat]):
         "Azure DevOps credentials are missing. Set them in secrets.toml or environment variables."
     )
 else:
-    show_mine = st.checkbox("Only show my tasks")
-    area_list = [
-        p.strip()
-        for p in st.text_input("Area path(s), comma-separated").split(",")
-        if p.strip()
-    ]
-    work_type = st.selectbox("Work item type", ["Tasks", "Epics"])
-
-    if work_type == "Tasks":
-        tasks = (
-            kevops_explore.get_my_open_tasks(org_url, project, pat, area_list)
-            if show_mine
-            else kevops_explore.get_open_tasks(org_url, project, pat, area_list)
-        )
-    else:
-        tasks = kevops_explore.get_open_epics(org_url, project, pat, area_list)
-
-    if tasks:
-        st.write(f"Found {len(tasks)} {work_type.lower()}.")
-        st.json(tasks)
-    else:
-        st.write(f"No open {work_type.lower()} found.")
+    epics = kevops_explore.get_open_epics(org_url, project, pat)
+    st.metric("Open Epics", len(epics))
