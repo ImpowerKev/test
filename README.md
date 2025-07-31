@@ -44,6 +44,7 @@ python kevops_explore.py <organization_url> <project> <pat> [--mine] [--count]
 
 * `--mine` fetches tasks assigned to the PAT user.
 * `--count` prints only the number of tasks instead of the full JSON output.
+* `--area` can be supplied multiple times to filter by area path.
 
 ## Deploying to Streamlit Cloud
 
@@ -59,3 +60,5 @@ Azure DevOps limits WIQL queries to 20,000 results. The helper functions
 `get_open_tasks` and `get_my_open_tasks` page through the IDs using the
 `[System.Id] > last_id` pattern so all matching tasks are returned without using
 the `TOP` clause, which can cause parsing errors on some servers.
+Both functions accept an optional list of area paths if you wish to filter the
+results programmatically.
