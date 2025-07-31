@@ -1,6 +1,6 @@
 # KEV OPS
 
-This repository contains a minimal Streamlit app for exploring DevOps in Streamlit Cloud.
+This repository contains a minimal Streamlit app that shows the number of open Epics from Azure DevOps.
 
 ## Running locally
 
@@ -33,6 +33,7 @@ This repository contains a minimal Streamlit app for exploring DevOps in Streaml
    ```bash
    streamlit run app.py
    ```
+   The page will show the current count of open Epics and display any connection errors on screen.
 
 ## CLI Usage
 
