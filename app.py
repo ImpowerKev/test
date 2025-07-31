@@ -24,13 +24,24 @@ if not all([org_url, project, pat]):
     )
 else:
     show_mine = st.checkbox("Only show my tasks")
-    if show_mine:
-        tasks = kevops_explore.get_my_open_tasks(org_url, project, pat)
+    area_list = [
+        p.strip()
+        for p in st.text_input("Area path(s), comma-separated").split(",")
+        if p.strip()
+    ]
+    work_type = st.selectbox("Work item type", ["Tasks", "Epics"])
+
+    if work_type == "Tasks":
+        tasks = (
+            kevops_explore.get_my_open_tasks(org_url, project, pat, area_list)
+            if show_mine
+            else kevops_explore.get_open_tasks(org_url, project, pat, area_list)
+        )
     else:
-        tasks = kevops_explore.get_open_tasks(org_url, project, pat)
+        tasks = kevops_explore.get_open_epics(org_url, project, pat, area_list)
 
     if tasks:
-        st.write(f"Found {len(tasks)} tasks.")
+        st.write(f"Found {len(tasks)} {work_type.lower()}.")
         st.json(tasks)
     else:
-        st.write("No open tasks found.")
+        st.write(f"No open {work_type.lower()} found.")

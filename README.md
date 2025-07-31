@@ -62,3 +62,4 @@ Azure DevOps limits WIQL queries to 20,000 results. The helper functions
 the `TOP` clause, which can cause parsing errors on some servers.
 Both functions accept an optional list of area paths if you wish to filter the
 results programmatically.
+`get_open_epics` provides similar functionality for Epic work items.
