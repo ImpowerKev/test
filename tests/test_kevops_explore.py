@@ -38,3 +38,25 @@ def test_main_count(capsys):
     )
     captured = capsys.readouterr()
     assert "3 tasks" in captured.out
+
+
+def test_get_open_epics_calls_helpers():
+    with mock.patch.object(
+        kevops_explore,
+        "_paged_wiql",
+        return_value=[1, 2],
+    ) as paged, mock.patch.object(
+        kevops_explore,
+        "_get_work_items",
+        return_value=[{"id": 1}, {"id": 2}],
+    ) as getter:
+        result = kevops_explore.get_open_epics("org", "proj", "pat", ["Area"])
+
+    expected = (
+        "[System.WorkItemType] = 'Epic' AND "
+        "[System.State] <> 'Closed' AND "
+        "([System.AreaPath] UNDER 'Area')"
+    )
+    paged.assert_called_once_with("org", "proj", "pat", expected)
+    getter.assert_called_once_with("org", [1, 2], "pat")
+    assert result == [{"id": 1}, {"id": 2}]

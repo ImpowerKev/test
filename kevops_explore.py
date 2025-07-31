@@ -171,6 +171,23 @@ def get_my_open_tasks(
     return _get_work_items(org_url, ids, pat)
 
 
+def get_open_epics(
+    org_url: str,
+    project: str,
+    pat: str,
+    area_paths: List[str] | None = None,
+) -> List[dict]:
+    """Return open epics, optionally filtered by area paths."""
+    predicate = (
+        "[System.WorkItemType] = 'Epic' AND "
+        "[System.State] <> 'Closed'"
+    )
+    if area_paths:
+        predicate += " AND " + _area_predicate(area_paths)
+    ids = _paged_wiql(org_url, project, pat, predicate)
+    return _get_work_items(org_url, ids, pat)
+
+
 # ---------------------------------------------------------------------------#
 # 4.  CLI entry‑point                                                        #
 # ---------------------------------------------------------------------------#
