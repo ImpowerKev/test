@@ -38,3 +38,7 @@ else:
             st.session_state["epic_count"] = len(epics)
 
     st.metric("Open Epics", st.session_state["epic_count"])
+
+    with st.expander("Debug credentials"):
+        if st.checkbox("Show st.secrets", key="show_secrets"):
+            st.code(str(dict(st.secrets)))
