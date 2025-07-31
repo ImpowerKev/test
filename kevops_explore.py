@@ -9,6 +9,7 @@ Key features
     • 400 Bad Request (>200 IDs per work‑item REST call)
 * Optional --mine switch (only items assigned to @Me)
 * Optional --count switch (print number of tasks instead of JSON list)
+* Optional --area filter to limit results by one or more area paths
 * Falls back to env vars or Streamlit secrets when args are omitted
 """
 
@@ -131,21 +132,41 @@ def _get_work_items(org_url: str, ids: List[int], pat: str) -> List[dict]:
 # ---------------------------------------------------------------------------#
 # 3.  Public API callable from Streamlit or tests                            #
 # ---------------------------------------------------------------------------#
-def get_open_tasks(org_url: str, project: str, pat: str) -> List[dict]:
+def _area_predicate(area_paths: List[str]) -> str:
+    """Return a WIQL predicate matching any of the given area paths."""
+    parts = [f"[System.AreaPath] UNDER '{path}'" for path in area_paths]
+    return '(' + ' OR '.join(parts) + ')'
+
+
+def get_open_tasks(
+    org_url: str,
+    project: str,
+    pat: str,
+    area_paths: List[str] | None = None,
+) -> List[dict]:
     predicate = (
         "[System.WorkItemType] = 'Task' AND "
         "[System.State] <> 'Closed'"
     )
+    if area_paths:
+        predicate += " AND " + _area_predicate(area_paths)
     ids = _paged_wiql(org_url, project, pat, predicate)
     return _get_work_items(org_url, ids, pat)
 
 
-def get_my_open_tasks(org_url: str, project: str, pat: str) -> List[dict]:
+def get_my_open_tasks(
+    org_url: str,
+    project: str,
+    pat: str,
+    area_paths: List[str] | None = None,
+) -> List[dict]:
     predicate = (
         "[System.WorkItemType] = 'Task' AND "
         "[System.State] <> 'Closed' AND "
         "[System.AssignedTo] = @Me"
     )
+    if area_paths:
+        predicate += " AND " + _area_predicate(area_paths)
     ids = _paged_wiql(org_url, project, pat, predicate)
     return _get_work_items(org_url, ids, pat)
 
@@ -189,15 +210,20 @@ def main() -> None:  # noqa: WPS231,WPS213
     parser.add_argument(
         "--count", action="store_true", help="Print task count instead of JSON docs"
     )
+    parser.add_argument(
+        "--area",
+        action="append",
+        help="Area path(s) to filter (may be repeated)",
+    )
 
     # Ignore unknown flags so that `streamlit run kevops_explore.py` works
     args, _ = parser.parse_known_args()
     org_url, project, pat = _resolve_credentials(args)
 
     tasks = (
-        get_my_open_tasks(org_url, project, pat)
+        get_my_open_tasks(org_url, project, pat, args.area)
         if args.mine
-        else get_open_tasks(org_url, project, pat)
+        else get_open_tasks(org_url, project, pat, args.area)
     )
 
     if args.count:
