@@ -1,4 +1,4 @@
-# Sample Streamlit App
+# KEV OPS
 
 This repository contains a minimal Streamlit app for exploring DevOps in Streamlit Cloud.
 
