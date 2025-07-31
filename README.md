@@ -33,7 +33,11 @@ This repository contains a minimal Streamlit app that shows the number of open E
    ```bash
    streamlit run app.py
    ```
-   The page will show the current count of open Epics and display any connection errors on screen.
+   The page shows the number of open Epics and includes a **Refresh** button to
+   update the count. Credentials are read from `st.secrets` so when deploying to
+   Streamlit Community Cloud you should create a `.streamlit/secrets.toml` file
+   (based on the provided example) and add your organization URL, project and PAT
+   there.
 
 ## CLI Usage
 
