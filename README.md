@@ -9,14 +9,25 @@ This repository contains a minimal Streamlit app for exploring DevOps in Streaml
    pip install -r requirements.txt
    ```
 2. Provide your Azure DevOps credentials either as environment variables or in
-   a `secrets.toml` file for Streamlit:
+   a `secrets.toml` file for Streamlit. Credentials can be stored at the top
+   level or under an `[azure]` section. An example file is provided at
+   `.streamlit/secrets.example.toml`:
 
    ```toml
    # secrets.toml
    organization_url = "https://example.visualstudio.com"
    project = "MyProject"
    pat = "<personal access token>"
+
+   # Or using a section
+   [azure]
+   organization_url = "https://example.visualstudio.com"
+   project = "MyProject"
+   pat = "<personal access token>"
    ```
+
+   Environment variables `AZURE_DEVOPS_ORG_URL`, `AZURE_DEVOPS_PROJECT`, and
+   `AZURE_DEVOPS_PAT` are also recognised as fallbacks.
 
 3. Launch the app:
    ```bash

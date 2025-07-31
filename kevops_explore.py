@@ -160,9 +160,17 @@ def _resolve_credentials(args: argparse.Namespace) -> tuple[str, str, str]:
     pat = args.pat or os.getenv("AZURE_DEVOPS_PAT")
     if st is not None:                              # pragma: no cover
         secrets = getattr(st, "secrets", {})
-        org_url = org_url or secrets.get("organization_url")
-        project = project or secrets.get("project")
-        pat = pat or secrets.get("pat")
+        try:
+            org_url = org_url or secrets.get("organization_url")
+            project = project or secrets.get("project")
+            pat = pat or secrets.get("pat")
+            azure = secrets.get("azure", {})
+        except Exception:
+            azure = {}
+        if isinstance(azure, dict):
+            org_url = org_url or azure.get("organization_url")
+            project = project or azure.get("project")
+            pat = pat or azure.get("pat")
 
     if not all([org_url, project, pat]):
         raise SystemExit(
