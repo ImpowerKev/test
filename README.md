@@ -9,6 +9,10 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+After providing a Personal Access Token, the sidebar's **Area Path** selector
+defaults to the area containing the fewest open Epics. This speeds up the
+initial load while still allowing you to choose "<All Areas>" if needed.
+
 ## Deployment on Streamlit Community Cloud
 
 1. Push this repository to GitHub.
