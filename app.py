@@ -208,9 +208,13 @@ if org_url and project and pat:
             st.warning("No open Epics found.")
         else:
             df_all = df_epics.copy()
-            areas = df_all['Area Path'].value_counts().index.tolist()
+            area_counts = df_all['Area Path'].value_counts()
+            areas = area_counts.index.tolist()
             areas.insert(0, '<All Areas>')
-            selected = st.sidebar.selectbox("Area Path", areas)
+            # default to least-populated area to avoid expensive initial load
+            default_area = area_counts.idxmin()
+            default_index = areas.index(default_area)
+            selected = st.sidebar.selectbox("Area Path", areas, index=default_index)
             df_filtered = df_all if selected == '<All Areas>' else df_all[df_all['Area Path'] == selected]
 
             # compute descendants and details
