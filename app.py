@@ -52,9 +52,19 @@ st.title("KEV OPS - Compass 🧭")
 
 # Sidebar configuration
 st.sidebar.header("Configuration")
-org_url = st.sidebar.text_input("Organization URL", "https://cgna-stg.visualstudio.com/").rstrip("/")
-project = st.sidebar.text_input("Project Name", "Foodbuy")
-pat = st.sidebar.text_input("Personal Access Token", type="password")
+# Prefer Streamlit secrets for cloud deployment, fall back to defaults
+org_url = st.sidebar.text_input(
+    "Organization URL",
+    st.secrets.get("ORG_URL", "https://cgna-stg.visualstudio.com/")
+).rstrip("/")
+project = st.sidebar.text_input(
+    "Project Name", st.secrets.get("PROJECT_NAME", "Foodbuy")
+)
+pat = st.sidebar.text_input(
+    "Personal Access Token",
+    value=st.secrets.get("AZURE_PAT", ""),
+    type="password",
+)
 
 # Helper: split list into chunks for batch API calls
 def chunk_list(lst, n):
